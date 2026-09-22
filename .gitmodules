@@ -1,3 +1,3 @@
-[submodule "Arduino/libralies"]
-	path = Arduino/libralies/pca9685-7seg
-	url = https://github.com/Tomoooji/pca9685-7seg
+[submodule "Arduino/lib/PCA9685"]
+	path = Arduino/lib/PCA9685
+	url = https://github.com/Tomoooji/PCA9685_tmj
