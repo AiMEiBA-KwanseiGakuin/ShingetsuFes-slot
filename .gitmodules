@@ -1,3 +1,0 @@
-[submodule "Arduino/lib/PCA9685"]
-	path = Arduino/lib/PCA9685
-	url = https://github.com/Tomoooji/PCA9685_tmj
