@@ -1,22 +1,4 @@
-# Slot
-slot machine for SHINGETSUsai  
-
-とりあえず作り直すぞの会  
-機能追加:  
-- レバー
-- 7セグLED with PCA9685  
-  [これ](https://github.com/Tomoooji/pca9685-7seg)
-- コイン検知
-- 役抽選？
-
----
-おそらく
-- もとからあったもの
-- 本番で動かしたもの
-- ごくごく小さい変更を加えたもの
-- 自己満用にやや変更したもの
-- 別の時間軸で作られたもの
-が存在している...
-
-  
-なーにがなんだかわーからーないーーーー
+# 🎰Slot
+新月祭でスロットを動かそう！  
+[ドキュメントはNotion上にあります](https://app.notion.com/p/_2026-3cfb1970b55980809727cca61a3c4cfe?source=copy_link)  
+売上最低目標は10万円くらいです  
