@@ -1,11 +1,11 @@
 """ Slot_2026.py
  スロットマシーンを作り直す
  画面表示:pygame
+ シリアル通信:PySerial
 """
 import sys, os
 import serial
 import serial.tools.list_ports
-#import numpy as np
 import pygame
 from pygame.locals import *
 import gui_template as gui
@@ -28,6 +28,7 @@ class Real:
         self.target_id = 0 
         
     def draw(self, screen):
+        # 一旦3枚分だけ描画
         screen.blit(self.imgs[self.target_id-2], (self.origin[0], self.origin[1] - self.pic_size[1] + self.diff_pos))
         screen.blit(self.imgs[self.target_id-1], (self.origin[0], self.origin[1] + self.diff_pos))
         screen.blit(self.imgs[self.target_id], (self.origin[0], self.origin[1] + self.pic_size[1] + self.diff_pos))
@@ -49,15 +50,18 @@ class Slot(gui.GUI):
         self.speed = 2        
         self.img_ready = pygame.transform.scale(pygame.image.load(os.path.join(pic_folder,"ready_img"+pic_type)).convert_alpha(), width, height)
         self.state = "INIT"
-        self.serial = serial.Serial(baudrate = 9600) #timeout = ...
+        self.serial = serial.Serial(baudrate = 9600, timeout = 0.5)
 
         self.Reals = {
             "Left":  {"rotation": False, "real": Real((650, 0), [self.name_arr[i] for i in [
-                4, 5, 4, 0, 2, 4, 5, 4, 3, 6, 4, 5, 4, 2, 0, 4, 5, 4, 5, 6, 1]], self.speed)},
+                4, 5, 4, 0, 2, 4, 5, 4, 3, 6, 4, 5, 4, 2, 0, 4, 5, 4, 5, 6, 1]], self.speed)
+            },
             "Center":{"rotation": False, "real": Real((350, 0), [self.name_arr[i] for i in [
-                3, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 6, 5]], self.speed)},
+                3, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 6, 5]], self.speed)
+            },
             "Right": {"rotation": False, "real": Real(( 50, 0), [self.name_arr[i] for i in [
-                5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 0, 6, 4]], self.speed)},
+                5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 0, 6, 4]], self.speed)
+            }
         }
         
     def setup(self):
@@ -67,6 +71,7 @@ class Slot(gui.GUI):
         
     def loop(self):
         command = self.readCommand()
+        print(f"Command: {command}")
         match self.state:
             case "READY":
                 self.screen.blit(self.img_ready, 0,0)
@@ -84,6 +89,7 @@ class Slot(gui.GUI):
                 # stop reals
                 self.Reals[command]["rotation"] = False
                 if command == "Timeout":
+                    print("TimeOut!")
                     self.Reals["Left"]["rotation"] = False
                     self.Reals["Center"]["rotation"] = False
                     self.Reals["Right"]["rotation"] = False
@@ -103,15 +109,33 @@ class Slot(gui.GUI):
                 self.state = "READY"
         
     def typed(self, key, mod):
+        if self.state == "READY":
+            self.Reals["Left"]["rotation"] = True
+            self.Reals["Center"]["rotation"] = True
+            self.Reals["Right"]["rotation"] = True
+            self.state = "PLAY"
         if self.state == "PLAY":
             if key == K_q: self.Reals["Left"]["rotation"] = False
             if key == K_w: self.Reals["Center"]["rotation"] = False
             if key == K_e: self.Reals["Right"]["rotation"] = False
         
     def startSerial(self):
-        ...
+        ports = list(serial.tools.list_ports.comports())
+        for p in ports:
+            if "Arduino" in p.description:
+                self.serial.port = p.device
+                self.serial.open()
+                print(f"Serial port {p.device} opened.")
+                return True
+        print("No Arduino found. Please connect the device.")
+        return False
     
     def readCommand(self):
+        if not USE_SERIAL:
+            return "Unknown"
+        if not self.serial.is_open:
+            print("Serial port is not open.")
+            return "Unknown"
         match self.serial.readline():
             case b"S\r\n":# for start playing
                 return "start"
@@ -123,5 +147,9 @@ class Slot(gui.GUI):
                 return "Left"
             case b"T\r\n":# for timeout (= stop all real)
                 return "Timeout"
-            
-    
+            case _:
+                return "Unknown"
+
+if __name__ == "__main__":
+    slot = Slot()
+    slot.main()
