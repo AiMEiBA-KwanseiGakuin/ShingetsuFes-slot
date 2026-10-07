@@ -10,7 +10,7 @@ import pygame
 from pygame.locals import *
 import gui_template as gui
 
-USE_SERIAL=True
+USE_SERIAL=False
 pic_folder=os.path.join(os.getcwd(),"img")
 pic_type = ".jpeg"
 
@@ -48,7 +48,7 @@ class Slot(gui.GUI):
     def __init__(self, width=920, height=490+200):
         super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True)
         self.speed = 2        
-        self.img_ready = pygame.transform.scale(pygame.image.load(os.path.join(pic_folder,"ready_img"+pic_type)).convert_alpha(), width, height)
+        #self.img_ready = pygame.transform.scale(pygame.image.load(os.path.join(pic_folder,"ready_img"+pic_type)).convert_alpha(), width, height)
         self.state = "INIT"
         self.serial = serial.Serial(baudrate = 9600, timeout = 0.5)
 
@@ -66,7 +66,7 @@ class Slot(gui.GUI):
         }
         
     def setup(self):
-        while True:
+        while USE_SERIAL:
             if self.startSerial(): break
         self.state = "READY"
         
@@ -88,12 +88,13 @@ class Slot(gui.GUI):
                 self.Reels["Right"]["reel"].draw()
                 
                 # stop reals
-                self.Reels[command]["rotation"] = False
-                if command == "Timeout":
-                    print("TimeOut!")
-                    self.Reels["Left"]["rotation"] = False
-                    self.Reels["Center"]["rotation"] = False
-                    self.Reels["Right"]["rotation"] = False
+                if command != "Unknown":
+                    self.Reels[command]["rotation"] = False
+                    if command == "Timeout":
+                        print("TimeOut!")
+                        self.Reels["Left"]["rotation"] = False
+                        self.Reels["Center"]["rotation"] = False
+                        self.Reels["Right"]["rotation"] = False
                 
                 # move reals
                 if self.Reels["Left"]["rotation"]: self.Reels["Left"]["reel"].move()
@@ -104,9 +105,12 @@ class Slot(gui.GUI):
                 if self.Reels["Right"]["rotation"] + self.Reels["Center"]["rotation"] + self.Reels["Left"]["rotation"] == 0:
                     self.state = "END"
             case "END":
-                print(f"left reel :{self.Reels["Left"]["reel"].names[self.Reels["Left"]["reel"].target_id]}")
-                print(f"center reel :{self.Reels["Center"]["reel"].names[self.Reels["Center"]["reel"].target_id]}")
-                print(f"right reel :{self.Reels["Right"]["reel"].names[self.Reels["Right"]["reel"].target_id]}")
+                print("left reel :",end = "")
+                print(self.Reels["Left"]["reel"].names[self.Reels["Left"]["reel"].target_id])
+                print("center reel :",end = "")
+                print(self.Reels["Center"]["reel"].names[self.Reels["Center"]["reel"].target_id])
+                print("right reel :",end = "")
+                print(self.Reels["Right"]["reel"].names[self.Reels["Right"]["reel"].target_id])
                 self.state = "READY"
         
     def typed(self, key, mod):
