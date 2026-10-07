@@ -10,7 +10,7 @@ import pygame
 from pygame.locals import *
 import gui_template as gui
 
-#use_arduino=True
+USE_SERIAL=True
 pic_folder=os.path.join(os.getcwd(),"img")
 pic_type = ".jpeg"
 
@@ -46,21 +46,19 @@ class Slot(gui.GUI):
     name_arr = ["bar", "bell", "cerry", "juggler", "mascat", "replay", "seven"]
     def __init__(self, width=920, height=490+200):
         super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True)
-        self.speed = 2
-        self.real_idx = [
-            [4, 5, 4, 0, 2, 4, 5, 4, 3, 6, 4, 5, 4, 2, 0, 4, 5, 4, 5, 6, 1], # left
-            [3, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 6, 5], # center
-            [5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 0, 6, 4]  # right
-        ]
-        self.LeftReal =  Real((650, 0), [self.name_arr[i] for i in self.real_idx[0]], self.speed)
-        self.CenterReal= Real((350, 0), [self.name_arr[i] for i in self.real_idx[1]], self.speed)
-        self.RightReal = Real(( 50, 0), [self.name_arr[i] for i in self.real_idx[2]], self.speed)
-        
+        self.speed = 2        
         self.img_ready = pygame.transform.scale(pygame.image.load(os.path.join(pic_folder,"ready_img"+pic_type)).convert_alpha(), width, height)
-        
         self.state = "INIT"
-        self.real_state = [false, false, flase]
         self.serial = serial.Serial(baudrate = 9600) #timeout = ...
+
+        self.Reals = {
+            "Left":  {"rotation": False, "real": Real((650, 0), [self.name_arr[i] for i in [
+                4, 5, 4, 0, 2, 4, 5, 4, 3, 6, 4, 5, 4, 2, 0, 4, 5, 4, 5, 6, 1]], self.speed)},
+            "Center":{"rotation": False, "real": Real((350, 0), [self.name_arr[i] for i in [
+                3, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 6, 5]], self.speed)},
+            "Right": {"rotation": False, "real": Real(( 50, 0), [self.name_arr[i] for i in [
+                5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 0, 6, 4]], self.speed)},
+        }
         
     def setup(self):
         while True:
@@ -73,41 +71,57 @@ class Slot(gui.GUI):
             case "READY":
                 self.screen.blit(self.img_ready, 0,0)
                 if command == "start":
-                    self.real.state = [True, True, True]
+                    self.Reals["Left"]["rotation"] = True
+                    self.Reals["Center"]["rotation"] = True
+                    self.Reals["Right"]["rotation"] = True
                     self.state = "PLAY"
             case "PLAY":
-                self.LeftReal.draw()
-                self.CenterReal.draw()
-                self.RightReal.draw()
+                # draw reals
+                self.Reals["Left"]["real"].draw()
+                self.Reals["Center"]["real"].draw()
+                self.Reals["Right"]["real"].draw()
                 
-                self.real_state = [command == cmd for cmd in ["left", "center", "right"]]
+                # stop reals
+                self.Reals[command]["rotation"] = False
+                if command == "Timeout":
+                    self.Reals["Left"]["rotation"] = False
+                    self.Reals["Center"]["rotation"] = False
+                    self.Reals["Right"]["rotation"] = False
                 
-                if self.real_state[0]: self.LeftReal.move()
-                if self.real_state[1]: self.CenterReal.move()
-                if self.real_state[2]: self.RightReal.move()
+                # move reals
+                if self.Reals["Left"]["rotation"]: self.Reals["Left"]["real"].move()
+                if self.Reals["Center"]["rotation"]: self.Reals["Center"]["real"].move()
+                if self.Reals["Right"]["rotation"]: self.Reals["Right"]["real"].move()
                 
-                if self.real_state == [False, False, False]: self.state = "END"
+                # check if all reals are stopped
+                if self.Reals["Right"]["rotation"] + self.Reals["Center"]["rotation"] + self.Reals["Left"]["rotation"] == 0:
+                    self.state = "END"
             case "END":
-                print(f"left real :{self.LeftReal.names[self.LeftRsal.target_id]}")
-                print(f"center real :{self.CenterReal.names[self.CenterReal.target_id]}")
-                print(f"right real :{self.RightReal.names[self.RightReal.target_id]}")
+                print(f"left real :{self.Reals["Left"]["real"].names[self.Reals["Left"]["real"].target_id]}")
+                print(f"center real :{self.Reals["Center"]["real"].names[self.Reals["Center"]["real"].target_id]}")
+                print(f"right real :{self.Reals["Right"]["real"].names[self.Reals["Right"]["real"].target_id]}")
                 self.state = "READY"
-                self.real_state = [False, False, False]
         
     def typed(self, key, mod):
-        if key == K_q: self.real_state[0] = false
-        if key == K_w: self.real_state[1] = false
-        if key == K_e: self.real_state[2] = false
+        if self.state == "PLAY":
+            if key == K_q: self.Reals["Left"]["rotation"] = False
+            if key == K_w: self.Reals["Center"]["rotation"] = False
+            if key == K_e: self.Reals["Right"]["rotation"] = False
         
     def startSerial(self):
-        
+        ...
     
     def readCommand(self):
         match self.serial.readline():
-            case b"S\r\n": # for start playing
-            case b"R\r\n": # for stop right real
-            case b"C\r\n": # for stop center real
-            case b"L\r\n": # for stop left real
-            case b"T\r\n": # for timeout (= stop all real)
+            case b"S\r\n":# for start playing
+                return "start"
+            case b"R\r\n":# for stop right real
+                return "Right"
+            case b"C\r\n":# for stop center real
+                return "Center"
+            case b"L\r\n":# for stop left real
+                return "Left"
+            case b"T\r\n":# for timeout (= stop all real)
+                return "Timeout"
             
     
