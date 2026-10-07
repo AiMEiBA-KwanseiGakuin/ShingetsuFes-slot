@@ -14,7 +14,7 @@ USE_SERIAL=True
 pic_folder=os.path.join(os.getcwd(),"img")
 pic_type = ".jpeg"
 
-class Real:
+class Reel:
     def __init__(self, area_topleft, pic_name_arr, speed):
         self.pic_size = (150,300)
         self.names = pic_name_arr
@@ -52,14 +52,15 @@ class Slot(gui.GUI):
         self.state = "INIT"
         self.serial = serial.Serial(baudrate = 9600, timeout = 0.5)
 
-        self.Reals = {
-            "Left":  {"rotation": False, "real": Real((650, 0), [self.name_arr[i] for i in [
+
+        self.Reels = {
+            "Left":  {"rotation": False, "reel": Reel((650, 0), [self.name_arr[i] for i in [
                 4, 5, 4, 0, 2, 4, 5, 4, 3, 6, 4, 5, 4, 2, 0, 4, 5, 4, 5, 6, 1]], self.speed)
             },
-            "Center":{"rotation": False, "real": Real((350, 0), [self.name_arr[i] for i in [
+            "Center":{"rotation": False, "reel": Reel((350, 0), [self.name_arr[i] for i in [
                 3, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 6, 5]], self.speed)
             },
-            "Right": {"rotation": False, "real": Real(( 50, 0), [self.name_arr[i] for i in [
+            "Right": {"rotation": False, "reel": Reel(( 50, 0), [self.name_arr[i] for i in [
                 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 0, 6, 4]], self.speed)
             }
         }
@@ -76,48 +77,48 @@ class Slot(gui.GUI):
             case "READY":
                 self.screen.blit(self.img_ready, 0,0)
                 if command == "start":
-                    self.Reals["Left"]["rotation"] = True
-                    self.Reals["Center"]["rotation"] = True
-                    self.Reals["Right"]["rotation"] = True
+                    self.Reels["Left"]["rotation"] = True
+                    self.Reels["Center"]["rotation"] = True
+                    self.Reels["Right"]["rotation"] = True
                     self.state = "PLAY"
             case "PLAY":
-                # draw reals
-                self.Reals["Left"]["real"].draw()
-                self.Reals["Center"]["real"].draw()
-                self.Reals["Right"]["real"].draw()
+                # draw reels
+                self.Reels["Left"]["reel"].draw()
+                self.Reels["Center"]["reel"].draw()
+                self.Reels["Right"]["reel"].draw()
                 
                 # stop reals
-                self.Reals[command]["rotation"] = False
+                self.Reels[command]["rotation"] = False
                 if command == "Timeout":
                     print("TimeOut!")
-                    self.Reals["Left"]["rotation"] = False
-                    self.Reals["Center"]["rotation"] = False
-                    self.Reals["Right"]["rotation"] = False
+                    self.Reels["Left"]["rotation"] = False
+                    self.Reels["Center"]["rotation"] = False
+                    self.Reels["Right"]["rotation"] = False
                 
                 # move reals
-                if self.Reals["Left"]["rotation"]: self.Reals["Left"]["real"].move()
-                if self.Reals["Center"]["rotation"]: self.Reals["Center"]["real"].move()
-                if self.Reals["Right"]["rotation"]: self.Reals["Right"]["real"].move()
+                if self.Reels["Left"]["rotation"]: self.Reels["Left"]["reel"].move()
+                if self.Reels["Center"]["rotation"]: self.Reels["Center"]["reel"].move()
+                if self.Reels["Right"]["rotation"]: self.Reels["Right"]["reel"].move()
                 
                 # check if all reals are stopped
-                if self.Reals["Right"]["rotation"] + self.Reals["Center"]["rotation"] + self.Reals["Left"]["rotation"] == 0:
+                if self.Reels["Right"]["rotation"] + self.Reels["Center"]["rotation"] + self.Reels["Left"]["rotation"] == 0:
                     self.state = "END"
             case "END":
-                print(f"left real :{self.Reals["Left"]["real"].names[self.Reals["Left"]["real"].target_id]}")
-                print(f"center real :{self.Reals["Center"]["real"].names[self.Reals["Center"]["real"].target_id]}")
-                print(f"right real :{self.Reals["Right"]["real"].names[self.Reals["Right"]["real"].target_id]}")
+                print(f"left reel :{self.Reels["Left"]["reel"].names[self.Reels["Left"]["reel"].target_id]}")
+                print(f"center reel :{self.Reels["Center"]["reel"].names[self.Reels["Center"]["reel"].target_id]}")
+                print(f"right reel :{self.Reels["Right"]["reel"].names[self.Reels["Right"]["reel"].target_id]}")
                 self.state = "READY"
         
     def typed(self, key, mod):
         if self.state == "READY":
-            self.Reals["Left"]["rotation"] = True
-            self.Reals["Center"]["rotation"] = True
-            self.Reals["Right"]["rotation"] = True
+            self.Reels["Left"]["rotation"] = True
+            self.Reels["Center"]["rotation"] = True
+            self.Reels["Right"]["rotation"] = True
             self.state = "PLAY"
         if self.state == "PLAY":
-            if key == K_q: self.Reals["Left"]["rotation"] = False
-            if key == K_w: self.Reals["Center"]["rotation"] = False
-            if key == K_e: self.Reals["Right"]["rotation"] = False
+            if key == K_q: self.Reels["Left"]["rotation"] = False
+            if key == K_w: self.Reels["Center"]["rotation"] = False
+            if key == K_e: self.Reels["Right"]["rotation"] = False
         
     def startSerial(self):
         ports = list(serial.tools.list_ports.comports())
@@ -139,13 +140,13 @@ class Slot(gui.GUI):
         match self.serial.readline():
             case b"S\r\n":# for start playing
                 return "start"
-            case b"R\r\n":# for stop right real
+            case b"R\r\n":# for stop right reel
                 return "Right"
-            case b"C\r\n":# for stop center real
+            case b"C\r\n":# for stop center reel
                 return "Center"
-            case b"L\r\n":# for stop left real
+            case b"L\r\n":# for stop left reel
                 return "Left"
-            case b"T\r\n":# for timeout (= stop all real)
+            case b"T\r\n":# for timeout (= stop all reels)
                 return "Timeout"
             case _:
                 return "Unknown"
