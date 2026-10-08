@@ -55,22 +55,22 @@ class Reel:
         self.diff_pos = 0
     
     def setStop(self):
-        self.will_stop = True
+        if self.is_move: self.will_stop = True
     
 class Slot(gui.GUI):
     name_arr = ["bar", "bell", "cerry", "juggler", "mascat", "replay", "seven"]
-    def __init__(self, width=870, height=600):
+    def __init__(self, width=870, height=500):
         super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True, fps=60)
-        self.speed = 20
+        self.speed = 30
         ##self.img_ready = pygame.transform.scale(pygame.image.load(os.path.join(pic_folder,"ready_img"+pic_type)).convert_alpha(), width, height)
         self.state = "INIT"
         self.serial = serial.Serial(baudrate = 9600, timeout = 0.5)
 
-        self.LeftReel = Reel((0,0), [self.name_arr[i] for i in [
+        self.LeftReel = Reel((0,25), [self.name_arr[i] for i in [
             4, 5, 4, 0, 2, 4, 5, 4, 3, 6, 4, 5, 4, 2, 0, 4, 5, 4, 5, 6, 1]], self.speed)
-        self.CenterReel = Reel((300,0), [self.name_arr[i] for i in [
+        self.CenterReel = Reel((300,25), [self.name_arr[i] for i in [
             3, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 6, 5]], self.speed)
-        self.RightReel = Reel((600,0), [self.name_arr[i] for i in [
+        self.RightReel = Reel((600,25), [self.name_arr[i] for i in [
             5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 0, 6, 4]], self.speed)
         
     def setup(self):
@@ -79,9 +79,8 @@ class Slot(gui.GUI):
         self.state = "READY"
         
     def loop(self):
-        self.screen.fill(self.color_bg)
         command = self.readCommand()
-        #print(f"Command: {command}")
+        if command != "Unknown": print(f"Command: {command}")
         match self.state:
             case "READY":
                 self.screen.fill((150,0,0),(200,100,470,250))
@@ -91,8 +90,15 @@ class Slot(gui.GUI):
                     self.CenterReel.setTarget(0)
                     self.RightReel.setTarget(0)
                     self.state = "PLAY"
+                    
             case "PLAY":
+                # move reals
+                self.LeftReel.move()
+                self.CenterReel.move()
+                self.RightReel.move()
+
                 # draw reels
+                self.screen.fill(self.color_bg)
                 self.LeftReel.draw(self.screen)
                 self.CenterReel.draw(self.screen)
                 self.RightReel.draw(self.screen)
@@ -110,31 +116,28 @@ class Slot(gui.GUI):
                         self.LeftReel.setStop()
                         self.CenterReel.setStop()
                         self.RightReel.setStop()
-                    case "Timeout":
-                        pass
                     case _:
-                        print(f"Unknown command: {command}")
-                
-                # move reals
-                self.LeftReel.move()
-                self.CenterReel.move()
-                self.RightReel.move()
+                        print(f"Unknown command: {command}")                
                 
                 # check if all reals are stopped
                 if not self.LeftReel.is_move and not self.CenterReel.is_move and not self.RightReel.is_move:
                     self.state = "END"
+                    print("left reel :",end = "")
+                    print(self.LeftReel.names[self.LeftReel.target_id])
+                    print("center reel :",end = "")
+                    print(self.CenterReel.names[self.CenterReel.target_id])
+                    print("right reel :",end = "")
+                    print(self.RightReel.names[self.RightReel.target_id])
                     
             case "END":
-                print("left reel :",end = "")
-                print(self.LeftReel.names[self.LeftReel.target_id])
-                print("center reel :",end = "")
-                print(self.CenterReel.names[self.CenterReel.target_id])
-                print("right reel :",end = "")
-                print(self.RightReel.names[self.RightReel.target_id])
-                self.state = "READY"
+                if command == "start":
+                    self.LeftReel.setTarget(0)
+                    self.CenterReel.setTarget(0)
+                    self.RightReel.setTarget(0)
+                    self.state = "PLAY"
         
     def typed(self, key, mod):
-        if self.state == "READY":
+        if self.state == "READY" or self.state == "END" and key == K_RETURN:
             self.LeftReel.setTarget(0)
             self.CenterReel.setTarget(0)
             self.RightReel.setTarget(0)
