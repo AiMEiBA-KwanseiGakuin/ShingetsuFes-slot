@@ -58,7 +58,7 @@ class Reel:
         if self.is_move: self.will_stop = True
     
 class Slot(gui.GUI):
-    name_arr = ["bar", "bell", "cerry", "juggler", "mascat", "replay", "seven"]
+    name_arr = ["bar", "bell", "cherry", "juggler", "mascat", "replay", "seven"]
     def __init__(self, width=870, height=500):
         super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True, fps=60)
         self.speed = 30
