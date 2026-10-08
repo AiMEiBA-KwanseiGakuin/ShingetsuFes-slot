@@ -11,16 +11,16 @@ from pygame.locals import *
 import gui_template as gui
 
 USE_SERIAL=False
-pic_folder=os.path.join(os.getcwd(),"img")
+pic_folder=os.path.join(os.getcwd(),"Python","img")
 pic_type = ".jpeg"
 
 class Reel:
     def __init__(self, area_topleft, pic_name_arr, speed):
-        self.pic_size = (150,300)
+        self.pic_size = (300,150)
         self.names = pic_name_arr
         self.imgs = [ pygame.transform.scale(
                         pygame.image.load(os.path.join(pic_folder,name+pic_type)).convert_alpha(),
-                        *self.pic_size) 
+                        self.pic_size) 
                      for name in pic_name_arr ]
         self.origin = area_topleft
         self.diff_pos = 0
@@ -29,15 +29,18 @@ class Reel:
         
     def draw(self, screen):
         # 一旦3枚分だけ描画
-        screen.blit(self.imgs[self.target_id-2], (self.origin[0], self.origin[1] - self.pic_size[1] + self.diff_pos))
-        screen.blit(self.imgs[self.target_id-1], (self.origin[0], self.origin[1] + self.diff_pos))
+        screen.blit(self.imgs[(self.target_id+2) % len(self.imgs)], (self.origin[0], self.origin[1] - self.pic_size[1] + self.diff_pos))
+        screen.blit(self.imgs[(self.target_id+1) % len(self.imgs)], (self.origin[0], self.origin[1] + self.diff_pos))
         screen.blit(self.imgs[self.target_id], (self.origin[0], self.origin[1] + self.pic_size[1] + self.diff_pos))
-        screen.blit(self.imgs[(self.target_id+1) % len(self.imgs)],
-                    (self.origin[0], self.origin[1] + (self.pic_size[1]*2) + self.diff_pos))
+        screen.blit(self.imgs[self.target_id-1], (self.origin[0], self.origin[1] + (self.pic_size[1]*2) + self.diff_pos))
+        screen.blit(self.imgs[self.target_id-2], (self.origin[0], self.origin[1] + (self.pic_size[1]*3) + self.diff_pos))
         
     def move(self):
-        self.diff_pos = (self.diff_pos + self.speed) % (self.pic_size[1]*3)
-        if self.diff_pos > self.pic_size[1] /2: self.target_id = (self.target_id + 1) % len(self.imgs)
+        self.diff_pos = self.diff_pos + self.speed
+        if self.diff_pos > self.pic_size[1]:
+            self.diff_pos -= self.pic_size[1]
+            self.target_id = (self.target_id + 1) % len(self.imgs)
+        #print(f"target_id: {self.target_id}, diff_pos: {self.diff_pos}")
     
     def setTarget(self, target_id):
         self.target_id = target_id
@@ -45,22 +48,22 @@ class Reel:
 
 class Slot(gui.GUI):
     name_arr = ["bar", "bell", "cerry", "juggler", "mascat", "replay", "seven"]
-    def __init__(self, width=920, height=490+200):
-        super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True)
-        self.speed = 2        
-        #self.img_ready = pygame.transform.scale(pygame.image.load(os.path.join(pic_folder,"ready_img"+pic_type)).convert_alpha(), width, height)
+    def __init__(self, width=870, height=600):
+        super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True, fps=60)
+        self.speed = 10
+        ##self.img_ready = pygame.transform.scale(pygame.image.load(os.path.join(pic_folder,"ready_img"+pic_type)).convert_alpha(), width, height)
         self.state = "INIT"
         self.serial = serial.Serial(baudrate = 9600, timeout = 0.5)
 
 
         self.Reels = {
-            "Left":  {"rotation": False, "reel": Reel((650, 0), [self.name_arr[i] for i in [
+            "Left":  {"rotation": False, "reel": Reel((  0, 0), [self.name_arr[i] for i in [
                 4, 5, 4, 0, 2, 4, 5, 4, 3, 6, 4, 5, 4, 2, 0, 4, 5, 4, 5, 6, 1]], self.speed)
             },
-            "Center":{"rotation": False, "reel": Reel((350, 0), [self.name_arr[i] for i in [
+            "Center":{"rotation": False, "reel": Reel((300, 0), [self.name_arr[i] for i in [
                 3, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 6, 5]], self.speed)
             },
-            "Right": {"rotation": False, "reel": Reel(( 50, 0), [self.name_arr[i] for i in [
+            "Right": {"rotation": False, "reel": Reel((600, 0), [self.name_arr[i] for i in [
                 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 0, 6, 4]], self.speed)
             }
         }
@@ -71,11 +74,13 @@ class Slot(gui.GUI):
         self.state = "READY"
         
     def loop(self):
+        self.screen.fill(self.color_bg)
         command = self.readCommand()
-        print(f"Command: {command}")
+        #print(f"Command: {command}")
         match self.state:
             case "READY":
-                self.screen.blit(self.img_ready, 0,0)
+                ###self.screen.blit(self.img_ready, 0,0)
+                self.screen.fill((150,0,0),(200,100,470,250))
                 if command == "start":
                     self.Reels["Left"]["rotation"] = True
                     self.Reels["Center"]["rotation"] = True
@@ -83,9 +88,9 @@ class Slot(gui.GUI):
                     self.state = "PLAY"
             case "PLAY":
                 # draw reels
-                self.Reels["Left"]["reel"].draw()
-                self.Reels["Center"]["reel"].draw()
-                self.Reels["Right"]["reel"].draw()
+                self.Reels["Left"]["reel"].draw(self.screen)
+                self.Reels["Center"]["reel"].draw(self.screen)
+                self.Reels["Right"]["reel"].draw(self.screen)
                 
                 # stop reals
                 if command != "Unknown":
@@ -120,9 +125,9 @@ class Slot(gui.GUI):
             self.Reels["Right"]["rotation"] = True
             self.state = "PLAY"
         if self.state == "PLAY":
-            if key == K_q: self.Reels["Left"]["rotation"] = False
-            if key == K_w: self.Reels["Center"]["rotation"] = False
-            if key == K_e: self.Reels["Right"]["rotation"] = False
+            if key == K_q or key == K_SPACE: self.Reels["Left"]["rotation"] = False
+            if key == K_w or key == K_SPACE: self.Reels["Center"]["rotation"] = False
+            if key == K_e or key == K_SPACE: self.Reels["Right"]["rotation"] = False
         
     def startSerial(self):
         ports = list(serial.tools.list_ports.comports())
