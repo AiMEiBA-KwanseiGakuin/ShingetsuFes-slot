@@ -1,0 +1,229 @@
+import sys
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QLabel
+from PySide6.QtCore import Qt
+
+
+# =========================
+# カード
+# =========================
+
+class Card(QLabel):
+
+    def __init__(self, parent=None, parent_card=None):
+        super().__init__("カード", parent)
+
+        # このカードの親カード
+        self.parent_card = parent_card
+
+        # このカードの中にある子カード
+        self.children_cards = []
+
+        # ドラッグ用
+        self.dragging = False
+        self.offset = None
+
+        # 見た目
+        self.setStyleSheet("""
+            background-color: white;
+            color: black;
+            border: 1px solid gray;
+            padding: 10px;
+        """)
+
+        self.resize(200, 100)
+
+    # -------------------------
+    # マウスでカードをつかむ
+    # -------------------------
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.dragging = True
+            self.offset = event.position().toPoint()
+
+    # -------------------------
+    # カードを動かす
+    # -------------------------
+
+    def mouseMoveEvent(self, event):
+        if self.dragging:
+            new_position = (
+                self.pos()
+                + event.position().toPoint()
+                - self.offset
+            )
+
+            self.move(new_position)
+
+    # -------------------------
+    # カードを離す
+    # -------------------------
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.dragging = False
+
+            # 親カードがある場合
+            if self.parent_card is not None:
+
+                # 親カードを変数に保存しておく
+                parent = self.parent_card
+
+                # カードの中心位置
+                center = self.geometry().center()
+
+            # 親カードの範囲外なら
+            if not parent.rect().contains(center):
+
+                # 親カードの子リストから自分を削除
+                if self in parent.children_cards:
+                    parent.children_cards.remove(self)
+
+                # 親カードとの関係を解除
+                self.parent_card = None
+    # -------------------------
+    # ダブルクリックで開く
+    # -------------------------
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.editor = CardEditor(self)
+            self.editor.show()
+
+
+# =========================
+# カードを開いた画面
+# =========================
+
+class CardEditor(QWidget):
+
+    def __init__(self, card):
+        super().__init__()
+
+        # 元になったカードを覚えておく
+        self.card = card
+
+        self.setWindowTitle("カード")
+        self.resize(700, 500)
+
+        self.setStyleSheet("""
+            background-color: darkblue;
+        """)
+
+        # -------------------------
+        # ツールバー
+        # -------------------------
+
+        self.add_button = QPushButton("＋カード", self)
+        self.add_button.move(20, 20)
+
+        self.color_button = QPushButton("色変更", self)
+        self.color_button.move(120, 20)
+
+        self.text_button = QPushButton("文字編集", self)
+        self.text_button.move(220, 20)
+
+        # -------------------------
+        # 開いているカード本体
+        # -------------------------
+
+        self.card_view = QLabel("カード", self)
+
+        self.card_view.setStyleSheet("""
+            background-color: white;
+            color: black;
+            border: 1px solid gray;
+            padding: 20px;
+        """)
+
+        self.card_view.resize(600, 350)
+        self.card_view.move(50, 90)
+
+        # -------------------------
+        # ＋カードを押したら
+        # 子カードを作る
+        # -------------------------
+
+        self.add_button.clicked.connect(self.create_child_card)
+
+    # =========================
+    # 子カードを作る
+    # =========================
+
+    def create_child_card(self):
+
+        child = Card(self, parent_card=self.card)
+
+        # 子カードを親カードの中に追加
+        self.card.children_cards.append(child)
+
+        # とりあえず重ならないように配置
+        number = len(self.card.children_cards)
+
+        x = 30 + (number - 1) * 20
+        y = 100 + (number - 1) * 20
+
+        child.move(x, y)
+
+        child.show()
+
+
+# =========================
+# アプリ本体
+# =========================
+
+app = QApplication(sys.argv)
+
+window = QWidget()
+
+window.setWindowTitle("My Note")
+window.resize(800, 600)
+
+window.setStyleSheet("""
+    background-color: darkblue;
+""")
+
+
+# =========================
+# キャンバス上のカード一覧
+# =========================
+
+cards = []
+
+
+# =========================
+# カードを作る
+# =========================
+
+def create_card():
+
+    card = Card(window)
+
+    x = 100 + len(cards) * 20
+    y = 100 + len(cards) * 20
+
+    card.move(x, y)
+
+    card.show()
+
+    cards.append(card)
+
+
+# =========================
+# カード追加ボタン
+# =========================
+
+button = QPushButton("カードを作る", window)
+
+button.move(20, 20)
+
+button.clicked.connect(create_card)
+
+
+# =========================
+# ウィンドウ表示
+# =========================
+
+window.show()
+
+sys.exit(app.exec())

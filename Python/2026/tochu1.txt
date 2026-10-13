@@ -1,0 +1,42 @@
+import sys
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QLabel
+
+app = QApplication(sys.argv)
+
+window = QWidget()
+window.setWindowTitle("My Note")
+window.resize(800, 600)
+window.setStyleSheet("background-color: darkblue;")
+
+cards = []
+
+
+def create_card():
+    card = QLabel("カード", window)                 ## ("表示する文字列", 親ウィジェット)("",widget)
+    card.setStyleSheet("""
+        background-color: white;
+        color: black;
+        border: 1px solid gray;
+        padding: 10px;
+    """)
+    card.resize(200, 100)
+
+    x = 100 + len(cards) * 20
+    y = 100 + len(cards) * 20
+    card.move(x, y)
+
+    card.show()
+    cards.append(card)
+
+
+button = QPushButton("カードを作る", window)
+button.move(20, 20)
+button.clicked.connect(create_card)
+
+window.show()
+
+sys.exit(app.exec())
+
+
+
+## 無限カードで激アツなのら　ロイロきゅうくらりん　まだカードは動かせません
