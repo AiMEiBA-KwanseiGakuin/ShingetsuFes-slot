@@ -1,4 +1,4 @@
-// コイン検出
+// タイマー実装
 
 const int left = A1;
 const int center = A2;
