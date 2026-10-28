@@ -73,6 +73,12 @@ class Slot(gui.GUI):
         self.RightReel = Reel((600,25), [self.name_arr[i] for i in [
             5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 0, 6, 4]], self.speed)
         
+        font = pygame.font.Font("C:/Windows/Fonts/meiryo.ttc", 60, bold=True)
+        self.text_ready = font.render("レバーを倒して開始", True, (255, 0, 0))
+        self.text_seven = font.render("大当たり!!", True, (255, 0, 0))
+        self.text_other = font.render("当たり!", True, (255, 0, 0))
+        self.text_lose = font.render("はずれ", True, (255, 0, 0))
+        
     def setup(self):
         while USE_SERIAL:
             if self.startSerial(): break
@@ -83,8 +89,13 @@ class Slot(gui.GUI):
         if command != "Unknown": print(f"Command: {command}")
         match self.state:
             case "READY":
-                self.screen.fill((150,0,0),(200,100,470,250))
-                ###self.screen.blit(self.img_ready, 0,0)
+                self.screen.fill(self.color_bg)
+                self.LeftReel.draw(self.screen)
+                self.CenterReel.draw(self.screen)
+                self.RightReel.draw(self.screen)
+                self.screen.fill((0,0,0),(0,190,870,100))
+                self.screen.blit(self.text_ready, (150, 200))
+
                 if command == "start":
                     self.LeftReel.setTarget(0)
                     self.CenterReel.setTarget(0)
@@ -117,7 +128,7 @@ class Slot(gui.GUI):
                         self.CenterReel.setStop()
                         self.RightReel.setStop()
                     case _:
-                        print(f"Unknown command: {command}")                
+                        print(f"Unknown command: {command}")           
                 
                 # check if all reals are stopped
                 if not self.LeftReel.is_move and not self.CenterReel.is_move and not self.RightReel.is_move:
@@ -130,11 +141,22 @@ class Slot(gui.GUI):
                     print(self.RightReel.names[self.RightReel.target_id])
                     
             case "END":
+                self.screen.fill((0,0,0),(0,190,870,100))
                 if command == "start":
                     self.LeftReel.setTarget(0)
                     self.CenterReel.setTarget(0)
                     self.RightReel.setTarget(0)
                     self.state = "PLAY"
+                # check roles
+                if self.LeftReel.names[self.LeftReel.target_id] == self.CenterReel.names[self.CenterReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == self.RightReel.names[self.RightReel.target_id]:
+                    if self.LeftReel.names[self.LeftReel.target_id] == "seven":
+                        self.screen.blit(self.text_seven, (250, 200))
+                    else:
+                        self.screen.blit(self.text_other, (250, 200))
+                elif self.LeftReel.names[self.LeftReel.target_id] == self.CenterReel.names[self.CenterReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == "cherry" or self.LeftReel.names[self.LeftReel.target_id] == self.RightReel.names[self.RightReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == "cherry":
+                    self.screen.blit(self.text_other, (250, 200))
+                else:
+                    self.screen.blit(self.text_lose, (250, 200))
         
     def typed(self, key, mod):
         if self.state == "READY" or self.state == "END" and key == K_RETURN:
