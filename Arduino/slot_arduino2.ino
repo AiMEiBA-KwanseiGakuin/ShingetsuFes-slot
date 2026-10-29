@@ -15,7 +15,7 @@ void setup() {
   pinMode(left, INPUT_PULLUP);
   pinMode(center, INPUT_PULLUP);
   pinMode(right, INPUT_PULLUP);
-  timer = timelit;
+  timer = timelimit;
   past = millis();
 }
 

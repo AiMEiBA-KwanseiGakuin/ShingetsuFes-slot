@@ -10,7 +10,7 @@ import pygame
 from pygame.locals import *
 import gui_template as gui
 
-USE_SERIAL=False
+USE_SERIAL=True
 pic_folder=os.path.join(os.getcwd(),"Python","img")
 pic_type = ".jpeg"
 
@@ -60,11 +60,11 @@ class Reel:
 class Slot(gui.GUI):
     name_arr = ["bar", "bell", "cherry", "juggler", "mascat", "replay", "seven"]
     def __init__(self, width=870, height=500):
-        super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True, fps=60)
-        self.speed = 30
+        super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True, fps=120)
+        self.speed = 15
         ##self.img_ready = pygame.transform.scale(pygame.image.load(os.path.join(pic_folder,"ready_img"+pic_type)).convert_alpha(), width, height)
         self.state = "INIT"
-        self.serial = serial.Serial(baudrate = 9600, timeout = 0.5)
+        self.serial = serial.Serial(baudrate = 9600, timeout = 0)
 
         self.LeftReel = Reel((0,25), [self.name_arr[i] for i in [
             4, 5, 4, 0, 2, 4, 5, 4, 3, 6, 4, 5, 4, 2, 0, 4, 5, 4, 5, 6, 1]], self.speed)
@@ -128,7 +128,8 @@ class Slot(gui.GUI):
                         self.CenterReel.setStop()
                         self.RightReel.setStop()
                     case _:
-                        print(f"Unknown command: {command}")           
+                        ...
+                        #print(f"Unknown command: {command}")           
                 
                 # check if all reals are stopped
                 if not self.LeftReel.is_move and not self.CenterReel.is_move and not self.RightReel.is_move:
@@ -141,13 +142,13 @@ class Slot(gui.GUI):
                     print(self.RightReel.names[self.RightReel.target_id])
                     
             case "END":
-                self.screen.fill((0,0,0),(0,190,870,100))
                 if command == "start":
                     self.LeftReel.setTarget(0)
                     self.CenterReel.setTarget(0)
                     self.RightReel.setTarget(0)
                     self.state = "PLAY"
                 # check roles
+                self.screen.fill((0,0,0),(0,190,870,100))
                 if self.LeftReel.names[self.LeftReel.target_id] == self.CenterReel.names[self.CenterReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == self.RightReel.names[self.RightReel.target_id]:
                     if self.LeftReel.names[self.LeftReel.target_id] == "seven":
                         self.screen.blit(self.text_seven, (250, 200))
@@ -186,18 +187,21 @@ class Slot(gui.GUI):
         if not self.serial.is_open:
             print("Serial port is not open.")
             return "Unknown"
-        match self.serial.readline():
-            case b"S\r\n":# for start playing
+        txt =self.serial.readline()
+        self.serial.reset_input_buffer()
+        match txt:
+            case b"s\r\n":# for start playing
                 return "start"
-            case b"R\r\n":# for stop right reel
+            case b"r\r\n":# for stop right reel
                 return "Right"
-            case b"C\r\n":# for stop center reel
+            case b"c\r\n":# for stop center reel
                 return "Center"
-            case b"L\r\n":# for stop left reel
+            case b"l\r\n":# for stop left reel
                 return "Left"
-            case b"T\r\n":# for timeout (= stop all reels)
+            case b"timeout\r\n":# for timeout (= stop all reels)
                 return "Timeout"
             case _:
+                print(f"Received: {txt}")
                 return "Unknown"
 
 if __name__ == "__main__":
