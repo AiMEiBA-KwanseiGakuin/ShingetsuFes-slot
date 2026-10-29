@@ -18,18 +18,24 @@ void setup() {
 }
 
 void loop() {
+  String command = "";
   if (!digitalRead(left)) {
-    Serial.println("left");
+    // Serial.println("left");
+    command = "L";
   }
   else if (!digitalRead(center)) {
-    Serial.println("center");
+    // Serial.println("center");
+    command = "C";
   }
   else if (!digitalRead(right)) {
-    Serial.println("right");
+    // Serial.println("right");
+    command = "R";
   }
 
-  if (abs(analogRead(stick1)-init1) > 10 || abs(analogRead(stick2)-init2) > 10) {
-    Serial.println("start");
+  if (abs(analogRead(stick1)-init1) > 5 || abs(analogRead(stick2)-init2) > 5) {
+    // Serial.println("start");
+    command = "S";
   }
 
+  Serial.println(command);
 }
