@@ -10,7 +10,11 @@ import pygame
 from pygame.locals import *
 import gui_template as gui
 
-USE_SERIAL=True
+USE_SERIAL=False
+FPS=110
+SPEED=15
+PRINT_LOG=True
+
 pic_folder=os.path.join(os.getcwd(),"Python","img")
 pic_type = ".jpeg"
 
@@ -47,7 +51,8 @@ class Reel:
             self.diff_pos = 0
             self.will_stop = False
             self.is_move = False
-        print(f"target_id: {self.target_id}, diff_pos: {self.diff_pos}, will_stop: {self.will_stop}, is_move: {self.is_move}")
+        if PRINT_LOG:
+            print(f"target_id: {self.target_id}, diff_pos: {self.diff_pos}, will_stop: {self.will_stop}, is_move: {self.is_move}")
     
     def setTarget(self, target_id):
         self.is_move = True
@@ -60,8 +65,8 @@ class Reel:
 class Slot(gui.GUI):
     name_arr = ["bar", "bell", "cherry", "juggler", "mascat", "replay", "seven"]
     def __init__(self, width=870, height=500):
-        super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True, fps=120)
-        self.speed = 15
+        super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True, fps=FPS)
+        self.speed = SPEED
         ##self.img_ready = pygame.transform.scale(pygame.image.load(os.path.join(pic_folder,"ready_img"+pic_type)).convert_alpha(), width, height)
         self.state = "INIT"
         self.serial = serial.Serial(baudrate = 9600, timeout = 0)
@@ -83,18 +88,21 @@ class Slot(gui.GUI):
         while USE_SERIAL:
             if self.startSerial(): break
         self.state = "READY"
+        self.message = self.text_ready
         
     def loop(self):
         command = self.readCommand()
-        if command != "Unknown": print(f"Command: {command}")
+        if command != "Unknown":
+            print(f"Command: {command}")
         match self.state:
             case "READY":
-                self.screen.fill(self.color_bg)
+                #self.screen.fill(self.color_bg)
                 self.LeftReel.draw(self.screen)
                 self.CenterReel.draw(self.screen)
                 self.RightReel.draw(self.screen)
+                
                 self.screen.fill((0,0,0),(0,190,870,100))
-                self.screen.blit(self.text_ready, (150, 200))
+                self.screen.blit(self.message, (150, 200))
 
                 if command == "start":
                     self.LeftReel.setTarget(0)
@@ -109,7 +117,6 @@ class Slot(gui.GUI):
                 self.RightReel.move()
 
                 # draw reels
-                self.screen.fill(self.color_bg)
                 self.LeftReel.draw(self.screen)
                 self.CenterReel.draw(self.screen)
                 self.RightReel.draw(self.screen)
@@ -127,9 +134,11 @@ class Slot(gui.GUI):
                         self.LeftReel.setStop()
                         self.CenterReel.setStop()
                         self.RightReel.setStop()
+                    #case "start":
+                        #return
                     case _:
-                        ...
-                        #print(f"Unknown command: {command}")           
+                        if PRINT_LOG:
+                            print(f"Unknown command: {command}")
                 
                 # check if all reals are stopped
                 if not self.LeftReel.is_move and not self.CenterReel.is_move and not self.RightReel.is_move:
@@ -142,23 +151,22 @@ class Slot(gui.GUI):
                     print(self.RightReel.names[self.RightReel.target_id])
                     
             case "END":
-                if command == "start":
-                    self.LeftReel.setTarget(0)
-                    self.CenterReel.setTarget(0)
-                    self.RightReel.setTarget(0)
-                    self.state = "PLAY"
-                # check roles
-                self.screen.fill((0,0,0),(0,190,870,100))
+                # check roles                
                 if self.LeftReel.names[self.LeftReel.target_id] == self.CenterReel.names[self.CenterReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == self.RightReel.names[self.RightReel.target_id]:
                     if self.LeftReel.names[self.LeftReel.target_id] == "seven":
-                        self.screen.blit(self.text_seven, (250, 200))
+                        self.message = self.text_seven
+                        print("大当たり!!")
                     else:
-                        self.screen.blit(self.text_other, (250, 200))
+                        self.message = self.text_other
+                        print("当たり!")
                 elif self.LeftReel.names[self.LeftReel.target_id] == self.CenterReel.names[self.CenterReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == "cherry" or self.LeftReel.names[self.LeftReel.target_id] == self.RightReel.names[self.RightReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == "cherry":
-                    self.screen.blit(self.text_other, (250, 200))
+                    self.message = self.text_other
+                    print("当たり!")
                 else:
-                    self.screen.blit(self.text_lose, (250, 200))
-        
+                    self.message = self.text_lose
+                    print("ハズレ!")
+                self.state = "READY"
+
     def typed(self, key, mod):
         if self.state == "READY" or self.state == "END" and key == K_RETURN:
             self.LeftReel.setTarget(0)
@@ -201,7 +209,8 @@ class Slot(gui.GUI):
             case b"timeout\r\n":# for timeout (= stop all reels)
                 return "Timeout"
             case _:
-                print(f"Received: {txt}")
+                if PRINT_LOG:
+                    print(f"Received: {txt}")
                 return "Unknown"
 
 if __name__ == "__main__":
