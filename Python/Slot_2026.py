@@ -16,7 +16,7 @@ SPEED=15
 PRINT_LOG=True
 
 pic_folder=os.path.join(os.getcwd(),"Python","img")
-pic_type = ".jpeg"
+pic_type = ".png"
 
 class Reel:
     def __init__(self, area_topleft, pic_name_arr, speed):
