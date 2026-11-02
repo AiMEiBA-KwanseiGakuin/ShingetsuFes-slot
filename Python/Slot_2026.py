@@ -23,7 +23,7 @@ class Reel:
         self.pic_size = (300,150)
         self.names = pic_name_arr
         self.imgs = [ pygame.transform.scale(
-                        pygame.image.load(os.path.join(pic_folder,name+pic_type)).convert_alpha(),
+                        pygame.image.load(os.path.join(pic_folder,name+"2"+pic_type)).convert_alpha(),
                         self.pic_size) 
                      for name in pic_name_arr ]
         self.origin = area_topleft
