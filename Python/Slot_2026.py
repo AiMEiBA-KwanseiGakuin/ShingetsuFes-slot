@@ -16,14 +16,14 @@ SPEED=15
 PRINT_LOG=True
 
 pic_folder=os.path.join(os.getcwd(),"Python","img")
-pic_type = ".png"
+pic_type = ".png" #or 2.png or .jpg
 
 class Reel:
     def __init__(self, area_topleft, pic_name_arr, speed):
         self.pic_size = (300,150)
         self.names = pic_name_arr
         self.imgs = [ pygame.transform.scale(
-                        pygame.image.load(os.path.join(pic_folder,name+"2"+pic_type)).convert_alpha(),
+                        pygame.image.load(os.path.join(pic_folder,name+pic_type)).convert_alpha(),
                         self.pic_size) 
                      for name in pic_name_arr ]
         self.origin = area_topleft
