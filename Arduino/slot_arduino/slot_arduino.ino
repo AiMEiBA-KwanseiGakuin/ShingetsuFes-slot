@@ -1,9 +1,9 @@
 // 一番シンプルなやつ
 
-const int left = 2;
-const int center = 3;
-const int right = 4;
-const int stick1 = A3;
+const int left = A3;
+const int center = A4;
+const int right = A5;
+const int stick1 = A1;
 const int stick2 = A2;
 
 int init1, init2;
@@ -21,20 +21,19 @@ void loop() {
   String command = "";
   if (!digitalRead(left)) {
     // Serial.println("left");
-    command = "L";
+    command = "l";
   }
   else if (!digitalRead(center)) {
     // Serial.println("center");
-    command = "C";
+    command = "c";
   }
   else if (!digitalRead(right)) {
     // Serial.println("right");
-    command = "R";
+    command = "r";
   }
 
-  if (abs(analogRead(stick1)-init1) > 5 || abs(analogRead(stick2)-init2) > 5) {
-    // Serial.println("start");
-    command = "S";
+  if (abs(analogRead(stick1)-init1) > 20 || abs(analogRead(stick2)-init2) > 20) {
+    Serial.println("s");
   }
 
   Serial.println(command);

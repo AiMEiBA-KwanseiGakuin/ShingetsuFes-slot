@@ -8,7 +8,7 @@ class GUI:
                 K_w:"up",K_s:"down",K_a:"left",K_d:"right"}
     def __init__(self,width,height,**kwargs):
         pygame.init()
-        self.winsize=(width,height)
+        self.winsize= (pygame.Info().current_w, pygame.Info().current_h) if kwargs.get("fullscreen",False) else (width,height)
         self.option=kwargs.get("option",0)
         self.screen=pygame.display.set_mode((width,height),self.option)
         pygame.display.set_caption(kwargs.get("title","title"))

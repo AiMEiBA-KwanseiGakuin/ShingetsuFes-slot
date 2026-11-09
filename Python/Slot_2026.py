@@ -10,10 +10,10 @@ import pygame
 from pygame.locals import *
 import gui_template as gui
 
-USE_SERIAL=False
+USE_SERIAL=True
 FPS=110
-SPEED=15
-PRINT_LOG=True
+SPEED=12
+PRINT_LOG=False
 
 pic_folder=os.path.join(os.getcwd(),"Python","img")
 pic_type = ".png" #or 2.png or .jpg
@@ -34,6 +34,7 @@ class Reel:
         self.is_move = False
         
     def draw(self, screen):
+        screen.blit(self.imgs[(self.target_id+3) % len(self.imgs)], (self.origin[0], self.origin[1] - (self.pic_size[1]*2) + self.diff_pos))
         screen.blit(self.imgs[(self.target_id+2) % len(self.imgs)], (self.origin[0], self.origin[1] - self.pic_size[1] + self.diff_pos))
         screen.blit(self.imgs[(self.target_id+1) % len(self.imgs)], (self.origin[0], self.origin[1] + self.diff_pos))
         screen.blit(self.imgs[self.target_id], (self.origin[0], self.origin[1] + self.pic_size[1] + self.diff_pos))
@@ -63,26 +64,29 @@ class Reel:
         if self.is_move: self.will_stop = True
     
 class Slot(gui.GUI):
-    name_arr = ["bar", "bell", "cherry", "juggler", "mascat", "replay", "seven"]
+    name_arr = ["seven", "bell", "cherry", "juggler", "mascat", "replay", "bar"]
     def __init__(self, width=870, height=500):
-        super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True, fps=FPS)
+        super().__init__(width, height, title="Slot Machine", bg=(0,0,0), typekey=True, fps=FPS, option=pygame.FULLSCREEN)
         self.speed = SPEED
         ##self.img_ready = pygame.transform.scale(pygame.image.load(os.path.join(pic_folder,"ready_img"+pic_type)).convert_alpha(), width, height)
         self.state = "INIT"
         self.serial = serial.Serial(baudrate = 9600, timeout = 0)
 
-        self.LeftReel = Reel((0,25), [self.name_arr[i] for i in [
-            4, 5, 4, 0, 2, 4, 5, 4, 3, 6, 4, 5, 4, 2, 0, 4, 5, 4, 5, 6, 1]], self.speed)
-        self.CenterReel = Reel((300,25), [self.name_arr[i] for i in [
-            3, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 6, 5]], self.speed)
-        self.RightReel = Reel((600,25), [self.name_arr[i] for i in [
-            5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 0, 6, 4]], self.speed)
+        self.LeftReel = Reel((50,125), [self.name_arr[i] for i in [
+            4, 5, 4, 0, 2, 4, 5, 4, 3, 6, 4, 5, 4, 2, 0, 4, 5, 4, 5, 6, 1
+            ]], self.speed)
+        self.CenterReel = Reel((350,125), [self.name_arr[i] for i in [
+            3, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 0, 5, 2, 4, 1, 5, 2, 4, 6, 5
+            ]], self.speed)
+        self.RightReel = Reel((650,125), [self.name_arr[i] for i in [
+            5, 1, 3, 4, 5, 1, 3, 4, 5, 1, 0, 4, 5, 1, 3, 4, 5, 1, 0, 6, 4, 2
+            ]], self.speed)
         
-        font = pygame.font.Font("C:/Windows/Fonts/meiryo.ttc", 60, bold=True)
-        self.text_ready = font.render("レバーを倒して開始", True, (255, 0, 0))
-        self.text_seven = font.render("大当たり!!", True, (255, 0, 0))
-        self.text_other = font.render("当たり!", True, (255, 0, 0))
-        self.text_lose = font.render("はずれ", True, (255, 0, 0))
+        font = pygame.font.Font("C:/Windows/Fonts/meiryo.ttc", 80, bold=True)
+        self.text_ready = font.render("レバーを倒して開始", True, (255, 153, 51))
+        self.text_seven = font.render("大当たり!!", True, (255, 153, 51))
+        self.text_other = font.render("当たり!", True, (255, 153, 51))
+        self.text_lose = font.render("はずれ", True, (255, 153, 51))
         
     def setup(self):
         while USE_SERIAL:
@@ -101,8 +105,8 @@ class Slot(gui.GUI):
                 self.CenterReel.draw(self.screen)
                 self.RightReel.draw(self.screen)
                 
-                self.screen.fill((0,0,0),(0,190,870,100))
-                self.screen.blit(self.message, (150, 200))
+                self.screen.fill((110,110,110),(50,300,900,120))
+                self.screen.blit(self.message, self.message.get_rect(center=(self.screen.get_width()//2-50, 360)))
 
                 if command == "start":
                     self.LeftReel.setTarget(0)
@@ -117,6 +121,7 @@ class Slot(gui.GUI):
                 self.RightReel.move()
 
                 # draw reels
+                self.screen.fill(self.color_bg)
                 self.LeftReel.draw(self.screen)
                 self.CenterReel.draw(self.screen)
                 self.RightReel.draw(self.screen)
@@ -151,6 +156,7 @@ class Slot(gui.GUI):
                     print(self.RightReel.names[self.RightReel.target_id])
                     
             case "END":
+                pygame.time.delay(500)
                 # check roles                
                 if self.LeftReel.names[self.LeftReel.target_id] == self.CenterReel.names[self.CenterReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == self.RightReel.names[self.RightReel.target_id]:
                     if self.LeftReel.names[self.LeftReel.target_id] == "seven":
@@ -159,9 +165,9 @@ class Slot(gui.GUI):
                     else:
                         self.message = self.text_other
                         print("当たり!")
-                elif self.LeftReel.names[self.LeftReel.target_id] == self.CenterReel.names[self.CenterReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == "cherry" or self.LeftReel.names[self.LeftReel.target_id] == self.RightReel.names[self.RightReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == "cherry":
-                    self.message = self.text_other
-                    print("当たり!")
+                # elif self.LeftReel.names[self.LeftReel.target_id] == self.CenterReel.names[self.CenterReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == "cherry" or self.LeftReel.names[self.LeftReel.target_id] == self.RightReel.names[self.RightReel.target_id] and self.LeftReel.names[self.LeftReel.target_id] == "cherry":
+                #     self.message = self.text_other
+                #     print("当たり!")
                 else:
                     self.message = self.text_lose
                     print("ハズレ!")
@@ -177,11 +183,15 @@ class Slot(gui.GUI):
             if key == K_q or key == K_SPACE: self.LeftReel.setStop()
             if key == K_w or key == K_SPACE: self.CenterReel.setStop()
             if key == K_e or key == K_SPACE: self.RightReel.setStop()
+        if key == K_ESCAPE:
+            self.running = False
+            pygame.quit()
+            sys.exit()
         
     def startSerial(self):
         ports = list(serial.tools.list_ports.comports())
         for p in ports:
-            if "Arduino" in p.description:
+            if "Arduino" in p.description or "USB" in p.description:
                 self.serial.port = p.device
                 self.serial.open()
                 print(f"Serial port {p.device} opened.")
